@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>食数報告システム</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+:root {
+–bg: #0d1117;
+–surface: #161b22;
+–surface2: #21262d;
+–border: #30363d;
+–accent: #58a6ff;
+–accent2: #3fb950;
+–warn: #d29922;
+–danger: #f85149;
+–text: #e6edf3;
+–text-muted: #8b949e;
+–text-dim: #484f58;
+}
+
+- { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+font-family: ‘Noto Sans JP’, sans-serif;
+background: var(–bg);
+color: var(–text);
+min-height: 100vh;
+display: flex;
+flex-direction: column;
+}
+
+header {
+background: var(–surface);
+border-bottom: 1px solid var(–border);
+padding: 0 24px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+height: 56px;
+position: sticky;
+top: 0;
+z-index: 100;
+}
+
+.logo {
+display: flex;
+align-items: center;
+gap: 10px;
+font-weight: 700;
+font-size: 15px;
+letter-spacing: -0.3px;
+}
+
+.logo-icon {
+width: 28px; height: 28px;
+background: linear-gradient(135deg, var(–accent), #79c0ff);
+border-radius: 6px;
+display: flex; align-items: center; justify-content: center;
+font-size: 14px;
+}
+
+.header-right { display: flex; align-items: center; gap: 16px; }
+
+.live-badge {
+display: flex;
+align-items: center;
+gap: 6px;
+background: rgba(63,185,80,0.1);
+border: 1px solid rgba(63,185,80,0.3);
+color: var(–accent2);
+padding: 4px 10px;
+border-radius: 20px;
+font-size: 11px;
+font-weight: 500;
+letter-spacing: 0.5px;
+}
+
+.live-dot {
+width: 6px; height: 6px;
+background: var(–accent2);
+border-radius: 50%;
+animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+0%, 100% { opacity: 1; transform: scale(1); }
+50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.time-display { font-family: ‘JetBrains Mono’, monospace; font-size: 13px; color: var(–text-muted); }
+
+.tab-nav {
+background: var(–surface);
+border-bottom: 1px solid var(–border);
+display: flex;
+padding: 0 24px;
+}
+
+.tab-btn {
+background: none;
+border: none;
+color: var(–text-muted);
+padding: 12px 20px;
+font-family: ‘Noto Sans JP’, sans-serif;
+font-size: 13px;
+font-weight: 500;
+cursor: pointer;
+border-bottom: 2px solid transparent;
+transition: all 0.2s;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.tab-btn:hover { color: var(–text); }
+.tab-btn.active { color: var(–accent); border-bottom-color: var(–accent); }
+
+.tab-badge {
+background: var(–accent);
+color: var(–bg);
+font-size: 10px;
+font-weight: 700;
+padding: 1px 6px;
+border-radius: 10px;
+min-width: 18px;
+text-align: center;
+}
+
+.main { flex: 1; padding: 24px; max-width: 1400px; margin: 0 auto; width: 100%; }
+.page { display: none; }
+.page.active { display: block; }
+
+.dashboard-header {
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 20px;
+}
+
+.dashboard-title { font-size: 18px; font-weight: 700; }
+.dashboard-date { font-size: 13px; color: var(–text-muted); margin-top: 2px; }
+
+.stats-row {
+display: grid;
+grid-template-columns: repeat(6, 1fr);
+gap: 12px;
+margin-bottom: 24px;
+}
+
+.stat-card {
+background: var(–surface);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 16px 20px;
+transition: border-color 0.2s;
+}
+
+.stat-card:hover { border-color: var(–accent); }
+
+.stat-label { font-size: 11px; color: var(–text-muted); text-transform: uppercase; letter-spacing: 0.8px; margin-bottom: 8px; }
+.stat-value { font-family: ‘JetBrains Mono’, monospace; font-size: 26px; font-weight: 600; color: var(–accent); line-height: 1; }
+.stat-sub { font-size: 11px; color: var(–text-dim); margin-top: 4px; }
+
+.table-container { background: var(–surface); border: 1px solid var(–border); border-radius: 8px; overflow: hidden; }
+
+.table-toolbar {
+display: flex;
+align-items: center;
+justify-content: space-between;
+padding: 12px 16px;
+border-bottom: 1px solid var(–border);
+}
+
+.table-title { font-size: 13px; font-weight: 600; color: var(–text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.export-btn {
+background: var(–surface2);
+border: 1px solid var(–border);
+color: var(–text);
+padding: 6px 14px;
+border-radius: 6px;
+font-size: 12px;
+font-family: ‘Noto Sans JP’, sans-serif;
+cursor: pointer;
+transition: all 0.2s;
+display: flex;
+align-items: center;
+gap: 6px;
+}
+
+.export-btn:hover { background: var(–accent); border-color: var(–accent); color: white; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+thead tr { background: var(–surface2); }
+
+th {
+padding: 10px 16px;
+text-align: left;
+font-weight: 600;
+font-size: 11px;
+color: var(–text-muted);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+border-bottom: 1px solid var(–border);
+white-space: nowrap;
+}
+
+th:not(:first-child) { text-align: center; }
+tbody tr { border-bottom: 1px solid var(–border); transition: background 0.15s; }
+tbody tr:last-child { border-bottom: none; }
+tbody tr:hover { background: var(–surface2); }
+td { padding: 12px 16px; color: var(–text); white-space: nowrap; }
+
+td:not(:first-child) {
+text-align: center;
+font-family: ‘JetBrains Mono’, monospace;
+font-size: 14px;
+font-weight: 600;
+}
+
+.company-name { font-weight: 500; display: flex; align-items: center; gap: 10px; }
+.company-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+.status-badge { font-size: 10px; padding: 2px 8px; border-radius: 10px; font-weight: 600; font-family: ‘Noto Sans JP’, sans-serif; letter-spacing: 0; }
+.status-submitted { background: rgba(63,185,80,0.15); color: var(–accent2); border: 1px solid rgba(63,185,80,0.3); }
+.status-pending { background: rgba(210,153,34,0.15); color: var(–warn); border: 1px solid rgba(210,153,34,0.3); }
+.num-zero { color: var(–text-dim); }
+
+.total-row { background: rgba(88,166,255,0.05) !important; border-top: 2px solid var(–border) !important; }
+.total-row td { color: var(–accent) !important; font-weight: 700; }
+.total-row td:first-child { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; color: var(–text-muted) !important; }
+
+.updated-at { font-size: 11px; color: var(–text-dim); margin-top: 8px; text-align: right; font-family: ‘JetBrains Mono’, monospace; }
+
+.form-wrapper { max-width: 600px; margin: 0 auto; }
+
+.form-card { background: var(–surface); border: 1px solid var(–border); border-radius: 12px; overflow: hidden; }
+
+.form-header {
+background: linear-gradient(135deg, rgba(88,166,255,0.1), rgba(63,185,80,0.05));
+border-bottom: 1px solid var(–border);
+padding: 24px 28px;
+}
+
+.form-title { font-size: 18px; font-weight: 700; margin-bottom: 4px; }
+.form-subtitle { font-size: 13px; color: var(–text-muted); }
+.form-body { padding: 28px; }
+.field-group { margin-bottom: 20px; }
+
+label {
+display: block;
+font-size: 12px;
+font-weight: 600;
+color: var(–text-muted);
+text-transform: uppercase;
+letter-spacing: 0.5px;
+margin-bottom: 8px;
+}
+
+select, input[type=“number”] {
+width: 100%;
+background: var(–surface2);
+border: 1px solid var(–border);
+color: var(–text);
+padding: 10px 14px;
+border-radius: 6px;
+font-size: 14px;
+font-family: ‘Noto Sans JP’, sans-serif;
+transition: border-color 0.2s;
+outline: none;
+-webkit-appearance: none;
+}
+
+select:focus, input:focus { border-color: var(–accent); box-shadow: 0 0 0 3px rgba(88,166,255,0.1); }
+select option { background: var(–surface2); }
+
+.meal-inputs { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+.meal-input-item label { font-size: 11px; margin-bottom: 6px; }
+.meal-input-item input { text-align: center; font-family: ‘JetBrains Mono’, monospace; font-size: 16px; font-weight: 600; }
+
+.lbl-orig-mid { color: #58a6ff !important; }
+.lbl-orig-lg  { color: #79c0ff !important; }
+.lbl-spec-mid { color: #d29922 !important; }
+.lbl-spec-lg  { color: #e3b341 !important; }
+
+.divider { height: 1px; background: var(–border); margin: 20px 0; }
+
+.total-preview {
+background: var(–surface2);
+border: 1px solid var(–border);
+border-radius: 8px;
+padding: 16px;
+display: flex;
+align-items: center;
+justify-content: space-between;
+margin-bottom: 20px;
+}
+
+.total-preview-label { font-size: 13px; color: var(–text-muted); }
+.total-preview-value { font-family: ‘JetBrains Mono’, monospace; font-size: 24px; font-weight: 700; color: var(–accent); }
+.total-preview-unit { font-size: 13px; color: var(–text-muted); margin-left: 4px; }
+
+.submit-btn {
+width: 100%;
+background: var(–accent);
+color: white;
+border: none;
+padding: 14px;
+border-radius: 8px;
+font-size: 15px;
+font-weight: 700;
+font-family: ‘Noto Sans JP’, sans-serif;
+cursor: pointer;
+transition: all 0.2s;
+letter-spacing: 0.3px;
+}
+
+.submit-btn:hover { background: #79c0ff; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(88,166,255,0.3); }
+.submit-btn:active { transform: translateY(0); }
+
+.toast {
+position: fixed;
+bottom: 24px;
+right: 24px;
+background: var(–accent2);
+color: white;
+padding: 12px 20px;
+border-radius: 8px;
+font-size: 14px;
+font-weight: 500;
+box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+transform: translateY(80px);
+opacity: 0;
+transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+z-index: 1000;
+display: flex;
+align-items: center;
+gap: 8px;
+}
+
+.toast.show { transform: translateY(0); opacity: 1; }
+
+.log-section { margin-top: 24px; background: var(–surface); border: 1px solid var(–border); border-radius: 8px; overflow: hidden; }
+.log-header { padding: 12px 16px; border-bottom: 1px solid var(–border); font-size: 12px; font-weight: 600; color: var(–text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.log-list { max-height: 200px; overflow-y: auto; }
+
+.log-item {
+padding: 10px 16px;
+border-bottom: 1px solid var(–border);
+display: flex;
+align-items: center;
+gap: 12px;
+font-size: 12px;
+animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+from { opacity: 0; transform: translateX(-10px); }
+to { opacity: 1; transform: translateX(0); }
+}
+
+.log-item:last-child { border-bottom: none; }
+.log-time { font-family: ‘JetBrains Mono’, monospace; color: var(–text-dim); width: 56px; flex-shrink: 0; }
+.log-company { color: var(–accent); font-weight: 600; width: 110px; flex-shrink: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.log-msg { color: var(–text-muted); flex: 1; }
+
+@media (max-width: 1000px) { .stats-row { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 600px)  { .stats-row { grid-template-columns: repeat(2, 1fr); } .main { padding: 16px; } }
+</style>
+
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🍱</div>
+    食数報告システム
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div>LIVE</div>
+    <div class="time-display" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<nav class="tab-nav">
+  <button class="tab-btn active" onclick="switchTab('dashboard', this)">
+    📊 調理場ダッシュボード
+    <span class="tab-badge" id="submitted-count">0</span>
+  </button>
+  <button class="tab-btn" onclick="switchTab('input', this)">
+    ✏️ 食数入力（各社）
+  </button>
+</nav>
+
+<main class="main">
+
+  <!-- DASHBOARD -->
+
+  <div class="page active" id="page-dashboard">
+    <div class="dashboard-header">
+      <div>
+        <div class="dashboard-title">本日の食数集計</div>
+        <div class="dashboard-date" id="today-date">--</div>
+      </div>
+      <button class="export-btn" onclick="exportCSV()">⬇ CSV出力</button>
+    </div>
+
+```
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-label">合計食数</div>
+    <div class="stat-value" id="stat-total">0</div>
+    <div class="stat-sub">食</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">報告済み</div>
+    <div class="stat-value" id="stat-submitted" style="color:var(--accent2)">0</div>
+    <div class="stat-sub">/ <span id="stat-total-companies">10</span> 社</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">オリジナル中</div>
+    <div class="stat-value" id="stat-origMid" style="color:#58a6ff">0</div>
+    <div class="stat-sub">食</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">オリジナル大</div>
+    <div class="stat-value" id="stat-origLg" style="color:#79c0ff">0</div>
+    <div class="stat-sub">食</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">スペシャル中</div>
+    <div class="stat-value" id="stat-specMid" style="color:var(--warn)">0</div>
+    <div class="stat-sub">食</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-label">スペシャル大</div>
+    <div class="stat-value" id="stat-specLg" style="color:#e3b341">0</div>
+    <div class="stat-sub">食</div>
+  </div>
+</div>
+
+<div class="table-container">
+  <div class="table-toolbar">
+    <span class="table-title">📋 食数一覧表</span>
+    <span style="font-size:11px;color:var(--text-dim)">自動更新中</span>
+  </div>
+  <table>
+    <thead>
+      <tr>
+        <th style="width:200px">会社名</th>
+        <th style="color:#58a6ff">オリジナル中</th>
+        <th style="color:#79c0ff">オリジナル大</th>
+        <th style="color:var(--warn)">スペシャル中</th>
+        <th style="color:#e3b341">スペシャル大</th>
+        <th>合計</th>
+        <th>状態</th>
+        <th>更新時刻</th>
+      </tr>
+    </thead>
+    <tbody id="dashboard-tbody"></tbody>
+    <tfoot>
+      <tr class="total-row">
+        <td>合 計</td>
+        <td id="tot-origMid">0</td>
+        <td id="tot-origLg">0</td>
+        <td id="tot-specMid">0</td>
+        <td id="tot-specLg">0</td>
+        <td id="tot-all">0</td>
+        <td></td>
+        <td></td>
+      </tr>
+    </tfoot>
+  </table>
+</div>
+<div class="updated-at" id="last-updated">最終更新: --</div>
+
+<div class="log-section">
+  <div class="log-header">📝 更新ログ</div>
+  <div class="log-list" id="log-list">
+    <div class="log-item">
+      <span class="log-time">--</span>
+      <span class="log-company">システム</span>
+      <span class="log-msg">起動しました。各社からの報告をお待ちしています。</span>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+
+  <!-- INPUT FORM -->
+
+  <div class="page" id="page-input">
+    <div class="form-wrapper">
+      <div class="form-card">
+        <div class="form-header">
+          <div class="form-title">本日の食数を報告する</div>
+          <div class="form-subtitle">確定した食数を入力し、送信してください</div>
+        </div>
+        <div class="form-body">
+          <div class="field-group">
+            <label>会社名を選択</label>
+            <select id="company-select">
+              <option value="">-- 会社を選んでください --</option>
+            </select>
+          </div>
+
+```
+      <div class="field-group">
+        <label>食数の内訳</label>
+        <div class="meal-inputs">
+          <div class="meal-input-item">
+            <label class="lbl-orig-mid">オリジナル中</label>
+            <input type="number" id="in-origMid" min="0" value="0" oninput="updateTotal()">
+          </div>
+          <div class="meal-input-item">
+            <label class="lbl-orig-lg">オリジナル大</label>
+            <input type="number" id="in-origLg" min="0" value="0" oninput="updateTotal()">
+          </div>
+          <div class="meal-input-item">
+            <label class="lbl-spec-mid">スペシャル中</label>
+            <input type="number" id="in-specMid" min="0" value="0" oninput="updateTotal()">
+          </div>
+          <div class="meal-input-item">
+            <label class="lbl-spec-lg">スペシャル大</label>
+            <input type="number" id="in-specLg" min="0" value="0" oninput="updateTotal()">
+          </div>
+        </div>
+      </div>
+
+      <div class="divider"></div>
+
+      <div class="total-preview">
+        <span class="total-preview-label">本日合計</span>
+        <div>
+          <span class="total-preview-value" id="preview-total">0</span>
+          <span class="total-preview-unit">食</span>
+        </div>
+      </div>
+
+      <button class="submit-btn" onclick="submitReport()">📨 調理場へ報告する</button>
+    </div>
+  </div>
+
+  <div class="log-section" style="margin-top:16px;">
+    <div class="log-header">自社の報告履歴（本日）</div>
+    <div class="log-list" id="my-log-list">
+      <div class="log-item">
+        <span class="log-msg" style="color:var(--text-dim)">まだ報告がありません</span>
+      </div>
+    </div>
+  </div>
+</div>
+```
+
+  </div>
+
+</main>
+
+<div class="toast" id="toast">✅ 報告が完了しました</div>
+
+<script>
+const COMPANIES = [
+  { id: 'c01', name: '株式会社 山田製作所',   color: '#58a6ff' },
+  { id: 'c02', name: '有限会社 田中商事',     color: '#79c0ff' },
+  { id: 'c03', name: '合同会社 佐藤フーズ',   color: '#3fb950' },
+  { id: 'c04', name: '株式会社 鈴木工業',     color: '#56d364' },
+  { id: 'c05', name: '有限会社 高橋建設',     color: '#d29922' },
+  { id: 'c06', name: '株式会社 伊藤物流',     color: '#e3b341' },
+  { id: 'c07', name: '合同会社 渡辺医療',     color: '#f85149' },
+  { id: 'c08', name: '株式会社 中村福祉',     color: '#ffa657' },
+  { id: 'c09', name: '有限会社 小林電機',     color: '#bc8cff' },
+  { id: 'c10', name: '株式会社 加藤サービス', color: '#ff7b72' },
+];
+
+const MEAL_KEYS = ['origMid', 'origLg', 'specMid', 'specLg'];
+const MEAL_LABELS = {
+  origMid: 'オリジナル中',
+  origLg:  'オリジナル大',
+  specMid: 'スペシャル中',
+  specLg:  'スペシャル大',
+};
+
+let reportData = {};
+let updateLog  = [];
+
+COMPANIES.forEach(c => {
+  reportData[c.id] = { origMid: 0, origLg: 0, specMid: 0, specLg: 0, submitted: false, updatedAt: null };
+});
+
+// Clock
+function updateClock() {
+  document.getElementById('clock').textContent = new Date().toLocaleTimeString('ja-JP');
+}
+setInterval(updateClock, 1000);
+updateClock();
+
+// Date
+document.getElementById('today-date').textContent =
+  new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'short' });
+
+// Tab switch
+function switchTab(tab, btn) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('page-' + tab).classList.add('active');
+  btn.classList.add('active');
+}
+
+// Populate company select
+const sel = document.getElementById('company-select');
+COMPANIES.forEach(c => {
+  const opt = document.createElement('option');
+  opt.value = c.id;
+  opt.textContent = c.name;
+  sel.appendChild(opt);
+});
+
+// Live total preview
+function updateTotal() {
+  const total = MEAL_KEYS.reduce((sum, k) => {
+    return sum + Math.max(0, parseInt(document.getElementById('in-' + k).value) || 0);
+  }, 0);
+  document.getElementById('preview-total').textContent = total;
+}
+
+// Submit report
+function submitReport() {
+  const cid = document.getElementById('company-select').value;
+  if (!cid) { alert('会社を選択してください'); return; }
+
+  const vals = {};
+  MEAL_KEYS.forEach(k => {
+    vals[k] = Math.max(0, parseInt(document.getElementById('in-' + k).value) || 0);
+  });
+  const total = MEAL_KEYS.reduce((s, k) => s + vals[k], 0);
+
+  const timeStr = new Date().toLocaleTimeString('ja-JP', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+  const company = COMPANIES.find(c => c.id === cid);
+
+  reportData[cid] = { ...vals, submitted: true, updatedAt: timeStr };
+  updateLog.unshift({ time: timeStr, company: company.name, vals, total });
+
+  addMyLog(timeStr, vals, total);
+  showToast(`${company.name} の報告を送信しました（計 ${total} 食）`);
+  renderDashboard();
+
+  MEAL_KEYS.forEach(k => { document.getElementById('in-' + k).value = 0; });
+  updateTotal();
+}
+
+function addMyLog(time, vals, total) {
+  const list = document.getElementById('my-log-list');
+  if (list.children.length === 1 && list.children[0].querySelector('.log-msg')?.style.color) {
+    list.innerHTML = '';
+  }
+  const breakdown = MEAL_KEYS.map(k => `${MEAL_LABELS[k]} ${vals[k]}`).join('・');
+  const item = document.createElement('div');
+  item.className = 'log-item';
+  item.innerHTML = `
+    <span class="log-time">${time}</span>
+    <span class="log-company" style="color:var(--accent2)">送信済</span>
+    <span class="log-msg">${breakdown} ＝ 合計 <strong style="color:var(--accent)">${total} 食</strong></span>
+  `;
+  list.prepend(item);
+}
+
+// Render dashboard
+function renderDashboard() {
+  const tbody = document.getElementById('dashboard-tbody');
+  tbody.innerHTML = '';
+
+  const totals = { origMid: 0, origLg: 0, specMid: 0, specLg: 0 };
+  let submittedCount = 0;
+
+  COMPANIES.forEach(company => {
+    const d = reportData[company.id];
+    const rowTotal = MEAL_KEYS.reduce((s, k) => s + d[k], 0);
+
+    if (d.submitted) {
+      MEAL_KEYS.forEach(k => { totals[k] += d[k]; });
+      submittedCount++;
+    }
+
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>
+        <span class="company-name">
+          <span class="company-dot" style="background:${company.color}"></span>
+          ${company.name}
+        </span>
+      </td>
+      <td class="${d.origMid === 0 ? 'num-zero' : ''}">${d.origMid}</td>
+      <td class="${d.origLg  === 0 ? 'num-zero' : ''}">${d.origLg}</td>
+      <td class="${d.specMid === 0 ? 'num-zero' : ''}">${d.specMid}</td>
+      <td class="${d.specLg  === 0 ? 'num-zero' : ''}">${d.specLg}</td>
+      <td style="color:${d.submitted ? 'var(--text)' : 'var(--text-dim)'}">${rowTotal}</td>
+      <td>
+        <span class="status-badge ${d.submitted ? 'status-submitted' : 'status-pending'}">
+          ${d.submitted ? '✓ 報告済' : '未報告'}
+        </span>
+      </td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--text-dim)">
+        ${d.updatedAt || '--'}
+      </td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const grandTotal = MEAL_KEYS.reduce((s, k) => s + totals[k], 0);
+
+  MEAL_KEYS.forEach(k => { document.getElementById('tot-' + k).textContent = totals[k]; });
+  document.getElementById('tot-all').textContent     = grandTotal;
+  document.getElementById('stat-total').textContent  = grandTotal;
+  document.getElementById('stat-submitted').textContent = submittedCount;
+  document.getElementById('stat-total-companies').textContent = COMPANIES.length;
+  document.getElementById('stat-origMid').textContent = totals.origMid;
+  document.getElementById('stat-origLg').textContent  = totals.origLg;
+  document.getElementById('stat-specMid').textContent = totals.specMid;
+  document.getElementById('stat-specLg').textContent  = totals.specLg;
+  document.getElementById('submitted-count').textContent = submittedCount;
+  document.getElementById('last-updated').textContent = '最終更新: ' + new Date().toLocaleTimeString('ja-JP');
+
+  renderLog();
+}
+
+function renderLog() {
+  if (updateLog.length === 0) return;
+  const list = document.getElementById('log-list');
+  list.innerHTML = '';
+  updateLog.slice(0, 30).forEach(entry => {
+    const item = document.createElement('div');
+    item.className = 'log-item';
+    const shortName = entry.company.replace('株式会社 ','（株）').replace('有限会社 ','（有）').replace('合同会社 ','（合）');
+    item.innerHTML = `
+      <span class="log-time">${entry.time}</span>
+      <span class="log-company">${shortName}</span>
+      <span class="log-msg">食数を報告しました — 合計 <strong style="color:var(--accent)">${entry.total} 食</strong></span>
+    `;
+    list.prepend(item);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = '✅ ' + msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 3500);
+}
+
+function exportCSV() {
+  const today = new Date().toLocaleDateString('ja-JP').replace(/\//g, '-');
+  const header = ['会社名', ...Object.values(MEAL_LABELS), '合計', '状態', '更新時刻'].join(',');
+  let csv = header + '\n';
+  COMPANIES.forEach(c => {
+    const d = reportData[c.id];
+    const total = MEAL_KEYS.reduce((s, k) => s + d[k], 0);
+    csv += `${c.name},${MEAL_KEYS.map(k => d[k]).join(',')},${total},${d.submitted ? '報告済' : '未報告'},${d.updatedAt || ''}\n`;
+  });
+  const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `食数報告_${today}.csv`;
+  a.click();
+}
+
+renderDashboard();
+</script>
+
+</body>
+</html>
